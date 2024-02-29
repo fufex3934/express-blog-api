@@ -126,12 +126,103 @@ const forgotPasswordCode = async (req, res, next) => {
       code,
       content: "change your password",
     });
+    res.status(200).json({
+      code: 200,
+      status: true,
+      message: "Forgot password code sent successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const recoverPassword = async (req, res, next) => {
+  try {
+    const { email, code, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.code = 404;
+      throw new Error("User not found");
+    }
+    if (user.forgotPasswordCode !== code) {
+      res.code = 400;
+      throw new Error("Invalid verification code");
+    }
+    const hashedPassword = await hashPassword(password);
+    user.password = hashedPassword;
+    user.forgotPasswordCode = null;
+    await user.save();
+    res.status(200).json({
+      code: 200,
+      status: true,
+      message: "password recovered successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const changePassword = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const { _id } = req.user;
+    const user = await User.findById(_id);
+    if (!user) {
+      res.code = 400;
+      throw new Error("User not found");
+    }
+    const match = await comparePassword(oldPassword, user.password);
+    if (!match) {
+      res.code = 400;
+      throw new Error("Old password does not match");
+    }
+    if (oldPassword === newPassword) {
+      res.code = 400;
+      throw new Error("You are providing old Password");
+    }
+    const hashedPassword = await hashPassword(newPassword);
+    user.password = hashedPassword;
+    await user.save();
+    res.status(200).json({
+      code: 200,
+      status: true,
+      message: "password changed successfully",
+    });
+    res.json(req.user);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateProfile = async (req, res, next) => {
+  try {
+    const { _id } = req.user;
+    const { name, email } = req.body;
+    const user = await User.findById(_id).select("-password -verificationCode -forgotPasswordCode");
+    if (!user) {
+      res.code = 404;
+      throw new Error("User not found");
+    }
+    if(email){
+      const isUserExist = await User.findOne({email});
+      if(isUserExist && isUserExist.email === email && String(user._id) !== String(isUserExist._id)){
+        res.code = 400;
+        throw new Error("Email already exists");
+      }
+    }
+    user.name = name ? name : user.name;
+    user.email = email ? email : user.email;
+    if(email){
+      user.isVerified = false;
+    }
+    await user.save();
     res
       .status(200)
       .json({
         code: 200,
         status: true,
-        message: "Forgot password code sent successfully",
+        message: "User Profile updated successfully",
+        data:{user},
       });
   } catch (error) {
     next(error);
@@ -144,4 +235,7 @@ module.exports = {
   verifyCode,
   verifyUser,
   forgotPasswordCode,
+  recoverPassword,
+  changePassword,
+  updateProfile,
 };
