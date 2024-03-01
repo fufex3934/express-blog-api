@@ -5,7 +5,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const connectMongodb = require('./init/mongodb');
-const {authRoute} =  require('./routes');
+const {authRoute,categoryRoute} =  require('./routes');
+
 const {errorHandler}  = require('./middlewares');
 const notFound = require('./controllers/notFound');
 //init app
@@ -18,7 +19,7 @@ app.use(bodyParser.urlencoded({limit:"500mb",extended:true}));
 app.use(morgan('dev'));
 //route section
 app.use('/api/v1/auth',authRoute);
-
+app.use('/api/v1/category',categoryRoute);
 //not found route
 app.use('*',notFound);
 //error handling middleware
