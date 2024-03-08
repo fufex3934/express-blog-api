@@ -5,7 +5,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const connectMongodb = require('./init/mongodb');
-const {authRoute,categoryRoute} =  require('./routes');
+const {authRoute,categoryRoute, fileRoute} =  require('./routes');
 
 const {errorHandler}  = require('./middlewares');
 const notFound = require('./controllers/notFound');
@@ -20,6 +20,7 @@ app.use(morgan('dev'));
 //route section
 app.use('/api/v1/auth',authRoute);
 app.use('/api/v1/category',categoryRoute);
+app.use('/api/v1/file',fileRoute);
 //not found route
 app.use('*',notFound);
 //error handling middleware
